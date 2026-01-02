@@ -1,18 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthService {
-  private client: ReturnType<typeof createClient>;
-
-  constructor() {
-    const url = process.env.SUPABASE_URL as string;
-    const key = process.env.SUPABASE_ANON_KEY as string;
-    this.client = createClient(url, key);
+  private client?: ReturnType<typeof createClient>;
+  constructor(private readonly config: ConfigService) {
+    // lazy init
+  }
+  private getClient() {
+    if (!this.client) {
+      const url = this.config.get<string>('SUPABASE_URL') as string;
+      const key = this.config.get<string>('SUPABASE_ANON_KEY') as string;
+      this.client = createClient(url, key);
+    }
+    return this.client;
   }
 
   async register(email: string, password: string) {
-    const { data, error } = await this.client.auth.signUp({ email, password });
+    const { data, error } = await this.getClient().auth.signUp({
+      email,
+      password,
+    });
     if (error) {
       return { error: { message: error.message, status: error.status } };
     }
@@ -20,7 +29,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const { data, error } = await this.client.auth.signInWithPassword({
+    const { data, error } = await this.getClient().auth.signInWithPassword({
       email,
       password,
     });
@@ -31,8 +40,9 @@ export class AuthService {
   }
 
   async googleUrl(redirectTo?: string, scopes?: string[]) {
-    const resolvedRedirect = redirectTo ?? process.env.GOOGLE_REDIRECT_URL;
-    const envScopes = process.env.GOOGLE_SCOPES;
+    const resolvedRedirect =
+      redirectTo ?? this.config.get<string>('GOOGLE_REDIRECT_URL');
+    const envScopes = this.config.get<string>('GOOGLE_SCOPES');
     const resolvedScopes =
       scopes?.join(' ') ??
       (envScopes
@@ -43,7 +53,7 @@ export class AuthService {
               .join(' ')
           : envScopes
         : undefined);
-    const { data, error } = await this.client.auth.signInWithOAuth({
+    const { data, error } = await this.getClient().auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: resolvedRedirect,
@@ -58,7 +68,18 @@ export class AuthService {
   }
 
   async exchangeCodeForSession(code: string) {
-    const { data, error } = await this.client.auth.exchangeCodeForSession(code);
+    const { data, error } =
+      await this.getClient().auth.exchangeCodeForSession(code);
+    if (error) {
+      return { error: { message: error.message, status: error.status } };
+    }
+    return { data };
+  }
+
+  async refresh(refresh_token: string) {
+    const { data, error } = await this.getClient().auth.refreshSession({
+      refresh_token,
+    });
     if (error) {
       return { error: { message: error.message, status: error.status } };
     }
