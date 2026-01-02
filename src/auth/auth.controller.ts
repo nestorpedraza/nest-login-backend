@@ -4,8 +4,17 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { GoogleUrlDto } from './dto/google-url.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
+import { LogoutDto } from './dto/logout.dto.js';
 import { RateLimitGuard } from '../common/rate-limit.guard.js';
-import { ApiTags, ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiBearerAuth,
+  ApiHeader,
+} from '@nestjs/swagger';
+import { Headers } from '@nestjs/common';
 
 @Controller('auth')
 @UseGuards(RateLimitGuard)
@@ -46,5 +55,28 @@ export class AuthController {
   @ApiOkResponse({ description: 'Sesión refrescada o error' })
   async refresh(@Body() body: RefreshDto) {
     return this.authService.refresh(body.refresh_token);
+  }
+
+  @Post('logout')
+  @ApiBearerAuth()
+  @ApiHeader({
+    name: 'Authorization',
+    required: false,
+    description: 'Bearer <access_token>',
+  })
+  @ApiBody({ type: LogoutDto })
+  @ApiOkResponse({ description: 'Sesión cerrada' })
+  async logout(
+    @Body() body: LogoutDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    let token = body.access_token;
+    if (!token && authorization) {
+      const parts = authorization.split(' ');
+      if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
+        token = parts[1];
+      }
+    }
+    return this.authService.logout(token ?? '', body.scope ?? 'global');
   }
 }

@@ -12,6 +12,7 @@ async function bootstrap() {
     .setTitle('Nest Login Backend')
     .setDescription('APIs de autenticación con Supabase y Google OAuth')
     .setVersion('1.0.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

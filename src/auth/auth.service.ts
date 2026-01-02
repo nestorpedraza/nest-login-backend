@@ -85,4 +85,18 @@ export class AuthService {
     }
     return { data };
   }
+
+  async logout(
+    access_token: string,
+    scope: 'global' | 'local' | 'others' = 'global',
+  ) {
+    const { error } = await this.getClient().auth.admin.signOut(
+      access_token,
+      scope,
+    );
+    if (error) {
+      return { error: { message: error.message, status: error.status } };
+    }
+    return { data: null };
+  }
 }
