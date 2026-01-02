@@ -1,26 +1,17 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { GoogleUrlDto } from './dto/google-url.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
-import { LogoutDto } from './dto/logout.dto.js';
 import { RateLimitGuard } from '../common/rate-limit.guard.js';
-import {
-  ApiTags,
-  ApiBody,
-  ApiOkResponse,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiHeader,
-} from '@nestjs/swagger';
-import { Headers } from '@nestjs/common';
+import { ApiTags, ApiBody, ApiOkResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 @UseGuards(RateLimitGuard)
 @ApiTags('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   @ApiBody({ type: RegisterDto })
@@ -59,24 +50,23 @@ export class AuthController {
 
   @Post('logout')
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'Authorization',
+  @ApiQuery({
+    name: 'scope',
     required: false,
-    description: 'Bearer <access_token>',
+    enum: ['global', 'local', 'others'],
   })
-  @ApiBody({ type: LogoutDto })
   @ApiOkResponse({ description: 'Sesión cerrada' })
   async logout(
-    @Body() body: LogoutDto,
     @Headers('authorization') authorization?: string,
+    @Query('scope') scope?: 'global' | 'local' | 'others',
   ) {
-    let token = body.access_token;
+    let token: string | undefined;
     if (!token && authorization) {
       const parts = authorization.split(' ');
       if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
         token = parts[1];
       }
     }
-    return this.authService.logout(token ?? '', body.scope ?? 'global');
+    return this.authService.logout(token ?? '', scope ?? 'global');
   }
 }
