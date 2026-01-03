@@ -4,6 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AUTH_PATTERNS } from '../shared/auth.contract.js';
 import { LoginDto } from '../auth/dto/login.dto.js';
+import { RegisterDto } from '../auth/dto/register.dto.js';
 import { RefreshDto } from '../auth/dto/refresh.dto.js';
 import { ResetPasswordDto } from '../auth/dto/reset-password.dto.js';
 import type { Request } from 'express';
@@ -21,6 +22,20 @@ export class GatewayController {
   constructor(
     @Inject('AUTH_CLIENT') private readonly authClient: ClientProxy,
   ) {}
+
+  @Post('register')
+  @ApiBody({ type: RegisterDto })
+  @ApiOkResponse({ description: 'Usuario creado o error' })
+  async register(@Body() body: RegisterDto): Promise<unknown> {
+    const obs = this.authClient.send<
+      unknown,
+      { email: string; password: string }
+    >(AUTH_PATTERNS.register, {
+      email: body.email,
+      password: body.password,
+    });
+    return await lastValueFrom(obs);
+  }
 
   @Post('login')
   @ApiBody({ type: LoginDto })

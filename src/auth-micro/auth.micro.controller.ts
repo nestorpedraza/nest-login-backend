@@ -8,6 +8,11 @@ import type { EmailPayload } from '../shared/auth.types.js';
 export class AuthMicroController {
   constructor(private readonly auth: AuthService) {}
 
+  @MessagePattern(AUTH_PATTERNS.register)
+  async register(@Payload() payload: { email: string; password: string }) {
+    return this.auth.register(payload.email, payload.password);
+  }
+
   @MessagePattern(AUTH_PATTERNS.login)
   async login(@Payload() payload: { email: string; password: string }) {
     return this.auth.login(payload.email, payload.password);
