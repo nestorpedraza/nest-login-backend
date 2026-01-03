@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
-import { AuthService } from '../auth/auth.service.js';
-import { AuthMicroController } from './auth.micro.controller.js';
+import { AuthService } from '../auth/auth.service';
+import { AuthMicroController } from './auth.micro.controller';
 
 @Module({
   imports: [
