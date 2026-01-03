@@ -17,6 +17,7 @@ import Joi from 'joi';
         SUPABASE_ANON_KEY: Joi.string().min(20).required(),
         GOOGLE_REDIRECT_URL: Joi.string().required(),
         GOOGLE_SCOPES: Joi.string().optional(),
+        PASSWORD_RESET_REDIRECT_URL: Joi.string().optional(),
         RATE_LIMIT_WINDOW_MS: Joi.number().default(60000),
         RATE_LIMIT_MAX: Joi.number().default(60),
       }),

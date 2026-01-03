@@ -99,4 +99,17 @@ export class AuthService {
     }
     return { data: null };
   }
+
+  async resetPassword(email: string, redirectTo?: string) {
+    const redirect =
+      redirectTo ?? this.config.get<string>('PASSWORD_RESET_REDIRECT_URL');
+    const { data, error } = await this.getClient().auth.resetPasswordForEmail(
+      email,
+      { redirectTo: redirect },
+    );
+    if (error) {
+      return { error: { message: error.message, status: error.status } };
+    }
+    return { data };
+  }
 }

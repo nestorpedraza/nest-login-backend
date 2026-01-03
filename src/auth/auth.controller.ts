@@ -1,17 +1,34 @@
-import { Body, Controller, Get, Post, Query, UseGuards, Headers } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import { getBearerToken } from '../shared/http/auth-header.util.js';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { GoogleUrlDto } from './dto/google-url.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { RateLimitGuard } from '../common/rate-limit.guard.js';
-import { ApiTags, ApiBody, ApiOkResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @Controller('auth')
 @UseGuards(RateLimitGuard)
 @ApiTags('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @ApiBody({ type: RegisterDto })
@@ -57,16 +74,17 @@ export class AuthController {
   })
   @ApiOkResponse({ description: 'Sesión cerrada' })
   async logout(
-    @Headers('authorization') authorization?: string,
+    @Req() req: Request,
     @Query('scope') scope?: 'global' | 'local' | 'others',
   ) {
-    let token: string | undefined;
-    if (!token && authorization) {
-      const parts = authorization.split(' ');
-      if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
-        token = parts[1];
-      }
-    }
+    const token = getBearerToken(req);
     return this.authService.logout(token ?? '', scope ?? 'global');
+  }
+
+  @Post('password/reset')
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiOkResponse({ description: 'Email de recuperación enviado' })
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword(body.email, body.redirectTo);
   }
 }
